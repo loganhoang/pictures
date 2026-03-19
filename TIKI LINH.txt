@@ -1,0 +1,27 @@
+With
+raw_data_TIKI_1 as (select 
+FORMAT_DATE('%Y-%m',LoadDate) as Month, MaKH, TenKH, TrangThai, GiaTriKhaiGia, 
+case when GREATEST(TLThucTe,(Dai*Rong*Cao)/5000*1000) <= 3000 then GREATEST(TLThucTe,(Dai*Rong*Cao)/5000*1000)
+else 3000 end as TLTinhCuoc1,
+case when GREATEST(TLThucTe,(Dai*Rong*Cao)/5000*1000) > 3000 then GREATEST(TLThucTe,(Dai*Rong*Cao)/5000*1000)-3000
+else 0 end as TLTinhCuoc2,
+LoaiDonHang, concat(Route,' ',DistrictType) as FinalRoute,
+count(distinct madh) as Volume
+from `ghn-fa.data_fa_shared.Dtm_FA_RevenueV2_CutOff_Daily`
+left join `ghn-fa.data_mart2.Dtm_FA_Revenue_PriceList_TIKI_ConfigRoute` on cast(MaKhuVucLay as string) = FromRegionID and cast(MaKhuVucGiao as string) = ToRegionID
+left join `ghn-fa.data_mart2.Dtm_FA_Revenue_PriceList_TIKI_ConfigDistrict` on cast(MaQuanGiao as string) = DistrictID
+where
+MaKH in (224845,18692) 
+and trangthai not in ('Mất hàng','Hư hại','Đơn lỗi')
+group by 1,2,3,4,5,6,7,8,9),
+
+raw_data_TIKI_2 as (select 
+Month, MaKH, TenKH, TrangThai, GiaTriKhaiGia, (TLTinhCuoc1+TLTinhCuoc2) as TLTinhCuoc, FinalRoute, Volume, 
+UnitPrice+(CEILING(TLTinhCuoc2/UnitWeight))*UnitPricePerUnitWeight as TransportFee,
+case 
+when TrangThai = 'Trả thành công'  then ((UnitPrice+(CEILING(TLTinhCuoc2/UnitWeight))*UnitPricePerUnitWeight)*ReturnedPercentage)
+else 0 end ReturnFee
+from raw_data_TIKI_1
+join `ghn-fa.data_mart2.Dtm_FA_Revenue_PriceList_TIKI_ConfigPriceList` on FinalRoute = RouteDistrictType and TLTinhCuoc1 > FromWeight and TLTinhCuoc1 <= ToWeight)
+
+select * from raw_data_TIKI_2 limit 1000
