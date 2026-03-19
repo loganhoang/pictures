@@ -1,3 +1,5 @@
+https://us05web.zoom.us/j/84379149671?pwd=6gRtuIJyvfWOHGd5haZ6FoJXLJk5Bb.1
+
 With
 raw_data_TIKI_1 as (select 
 FORMAT_DATE('%Y-%m',LoadDate) as Month, MaKH, TenKH, TrangThai, GiaTriKhaiGia, 
